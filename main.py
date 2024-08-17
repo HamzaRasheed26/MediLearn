@@ -130,7 +130,8 @@ elif st.session_state.page == "chat_page":
             chat_completion = client.chat.completions.create(
                 model="llama3-70b-8192",
                 messages=[
-                    {"role": "system", "content": "You are a senior doctor mentoring a junior doctor. Provide guidance and feedback based on the following case study and junior doctor's input. Help him to diagnose the patient and not tell him the diagnose just give him hints."},
+                    {"role": "system", "content": "You are a senior doctor mentoring a junior doctor. Provide guidance and feedback based on the following case study and junior doctor's input."},
+                    *st.session_state.messages,  # Include the entire chat history
                     {"role": "user", "content": dynamic_prompt}
                 ],
                 max_tokens=600,
