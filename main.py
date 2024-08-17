@@ -92,6 +92,8 @@ elif st.session_state.page == "chat_page":
         avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
         with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
+        
+    
 
     def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
         """Yield chat response content from the Groq API response."""
@@ -130,8 +132,7 @@ elif st.session_state.page == "chat_page":
             chat_completion = client.chat.completions.create(
                 model="llama3-70b-8192",
                 messages=[
-                    {"role": "system", "content": "You are a senior doctor mentoring a junior doctor. Provide guidance and feedback based on the following case study and junior doctor's input."},
-                    *st.session_state.messages,  # Include the entire chat history
+                    {"role": "system", "content": "You are a senior doctor mentoring a junior doctor. Provide guidance and feedback based on the following case study and junior doctor's input. Help him to diagnose the patient and not tell him the diagnose just give him hints."},
                     {"role": "user", "content": dynamic_prompt}
                 ],
                 max_tokens=600,
@@ -156,4 +157,83 @@ elif st.session_state.page == "chat_page":
             st.session_state.messages.append(
                 {"role": "assistant", "content": combined_response}
             )
+    # Button to proceed to performance evaluation below input box
+    if st.button("Evaluate Performance"):
+        # Count the number of assistant messages
+        assistant_messages_count = sum(1 for message in st.session_state.messages if message["role"] == "assistant")
+        
+        # Check if there are more than 1 assistant messages
+        if assistant_messages_count > 1:
+            st.session_state.page = "evaluation"
+            st.rerun()
 
+elif st.session_state.page == "evaluation":
+    # Page 3: Evaluation by Senior Doctor
+    
+    def evaluate_performance():
+        # Senior doctor evaluates junior doctor's performance
+        prompt = f"""
+        Based on the conversation with the junior doctor, please evaluate the following:
+        
+        1. Diagnostic Accuracy (0-10): 
+        2. Reasoning and Correctness (0-10): 
+        3. Patient Management (0-10): 
+        
+        Provide detailed feedback, highlighting strengths, mistakes, and suggestions for improvement. The junior doctor was working on the following case study:
+        {st.session_state.selected_case_study}
+        
+        Here is the full conversation for reference:
+        """
+
+        # Add the chat history to the prompt for evaluation
+        for message in st.session_state.messages:
+            role = "Senior Doctor" if message["role"] == "assistant" else "Junior Doctor"
+            prompt += f"{role}: {message['content']}\n"
+
+        return prompt
+    
+    # Store evaluation results
+    if "evaluation" not in st.session_state:
+        st.session_state.evaluation = {
+            "diagnostic_accuracy": None,
+            "reasoning": None,
+            "patient_management": None,
+            "feedback": None
+        }
+
+    st.title("Doctor-Patient Chat Evaluation")
+    
+    st.subheader("Final Evaluation")
+
+    evaluation_prompt = evaluate_performance()
+    
+    # Fetch feedback and scores from the LLM
+    try:
+        evaluation_response = client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=[{"role": "system", "content": evaluation_prompt}],
+            max_tokens=800
+        )
+
+        # Store and display the evaluation scores and feedback
+        evaluation_content = evaluation_response.choices[0].message.content
+        
+        # Optionally, you can use regex or parsing to extract individual scores from the response
+        # For simplicity, we'll store the whole response as feedback for now
+        st.session_state.evaluation["feedback"] = evaluation_content
+
+    except Exception as e:
+        st.error(f"Error generating evaluation: {e}")
+    
+    # Show evaluation feedback
+    if st.session_state.evaluation["feedback"]:
+        st.subheader("Feedback from Senior Doctor")
+        st.markdown(st.session_state.evaluation["feedback"])
+
+    # Allow the junior doctor to reset and start a new session
+    if st.button("Start New Session"):
+        st.session_state.page = "case_selection"
+        st.session_state.messages = []
+        st.session_state.evaluation = None
+        st.session_state.selected_case_study = None
+        st.rerun()
