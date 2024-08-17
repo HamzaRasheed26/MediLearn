@@ -1,9 +1,17 @@
 import streamlit as st
 import re
+import os
 from groq import Groq
+from dotenv import load_dotenv
 
-# Initialize the Groq client with your API key
-client = Groq(api_key="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")
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the API key from environment variables
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+# Initialize the Groq client with the API key from .env
+client = Groq(api_key=groq_api_key)
 
 # Specializations and difficulty levels
 specializations = ["Cardiology", "Neurology", "Pediatrics"]
