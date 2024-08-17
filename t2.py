@@ -1,8 +1,9 @@
 import streamlit as st
 import re
-from groq import Groq
-from dotenv import load_dotenv
 import os
+from groq import Groq
+from typing import Generator
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -76,12 +77,83 @@ if st.session_state.page == "case_selection":
 
 # Page 2: Chat Interaction
 elif st.session_state.page == "chat_page":
-    st.title("Doctor-Patient Chat")
+    st.title("Senior-Junior Doctor - Chat on Case Study")
     st.subheader("Selected Case Study")
 
     # Display the selected case study
     st.markdown(f"**Case Study:**\n{st.session_state.selected_case_study}")
 
-    # Chat input for junior doctor
-    if st.chat_input("Your response:"):
-        st.write("Chat functionality will be implemented here.")
+    # Initialize chat history and selected model
+    if "messages" not in st.session_state:
+        st.session_state['messages'] = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
+        with st.chat_message(message["role"], avatar=avatar):
+            st.markdown(message["content"])
+
+    def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
+        """Yield chat response content from the Groq API response."""
+        for chunk in chat_completion:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+    def get_dynamic_prompt(case_study, user_input):
+        # Start with the case study
+        prompt = f"Case Study: {case_study}\n\nOur Chat History:\n"
+
+        # Add previous chat history if available
+        for message in st.session_state.messages:
+            role = "Senior Doctor" if message["role"] == "assistant" else "Junior Doctor"
+            prompt += f"{role}: {message['content']}\n"
+
+        # Add the latest input from the junior doctor
+        prompt += f"Now Junior Doctor said something: {user_input}"
+
+        return prompt
+
+
+    case_study = st.session_state.selected_case_study
+
+    if prompt := st.chat_input("Enter your prompt here..."):
+        with st.chat_message("user", avatar="👨‍💻"):
+            st.markdown(prompt)
+
+        # Generate prompt with case study and user input
+        dynamic_prompt = get_dynamic_prompt(case_study, prompt)
+
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Fetch response from Groq API
+        try:
+            chat_completion = client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[
+                    {"role": "system", "content": "You are a senior doctor mentoring a junior doctor. Provide guidance and feedback based on the following case study and junior doctor's input."},
+                    *st.session_state.messages,  # Include the entire chat history
+                    {"role": "user", "content": dynamic_prompt}
+                ],
+                max_tokens=600,
+                stream=True,
+            )
+
+            # Use the generator function with st.write_stream
+            with st.chat_message("assistant", avatar="🤖"):
+                chat_responses_generator = generate_chat_responses(chat_completion)
+                full_response = st.write_stream(chat_responses_generator)
+        except Exception as e:
+            st.error(e, icon="🚨")
+
+        # Append the full response to session_state.messages
+        if isinstance(full_response, str):
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response}
+            )
+        else:
+            # Handle the case where full_response is not a string
+            combined_response = "\n".join(str(item) for item in full_response)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": combined_response}
+            )
+
