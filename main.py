@@ -21,22 +21,27 @@ if "page" not in st.session_state:
     st.session_state.page = "case_selection"
 
 # Function to switch to the chat page
+
+
 def next_page():
     st.session_state.page = "chat_page"
     st.rerun()
+
 
 # Page 1: Case Study Selection
 if st.session_state.page == "case_selection":
     st.title("Junior Doctor Training System")
     st.subheader("Dynamic Case Study Generator")
 
-    selected_specialization = st.selectbox("Select your specialization:", specializations)
-    selected_difficulty = st.selectbox("Select Difficulty Level:", difficulty_levels)
+    selected_specialization = st.selectbox(
+        "Select your specialization:", specializations)
+    selected_difficulty = st.selectbox(
+        "Select Difficulty Level:", difficulty_levels)
     mkd = st.markdown("---")
 
     if st.button("Generate Case Studies"):
         prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis."
-        
+
         try:
             # Call the Groq API to generate case studies
             case_study_response = client.chat.completions.create(
@@ -44,12 +49,14 @@ if st.session_state.page == "case_selection":
                 messages=[{"role": "system", "content": prompt}],
                 max_tokens=500,
             )
-            
+
             # Extract and split the case studies
             case_study_text = case_study_response.choices[0].message.content
-            case_studies = re.split(r'\*\*Case Study \d+:\*\*', case_study_text)
+            case_studies = re.split(
+                r'\*\*Case Study \d+:\*\*', case_study_text)
             case_studies.pop(0)  # Remove the first empty entry
-            case_studies = [case.strip() for case in case_studies if case.strip()]
+            case_studies = [case.strip()
+                            for case in case_studies if case.strip()]
 
             # Store case studies in session_state
             st.session_state.case_studies = case_studies
@@ -62,7 +69,8 @@ if st.session_state.page == "case_selection":
     # If case studies are generated, display the selection
     if "case_studies" in st.session_state:
         st.markdown("### Case Studies:")
-        selected_case_study = st.selectbox("Select a case study:", st.session_state.case_studies)
+        selected_case_study = st.selectbox(
+            "Select a case study:", st.session_state.case_studies)
 
         # Save the selected case study in session_state
         st.session_state.selected_case_study = selected_case_study
@@ -92,8 +100,6 @@ elif st.session_state.page == "chat_page":
         avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
         with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
-        
-    
 
     def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
         """Yield chat response content from the Groq API response."""
@@ -114,7 +120,6 @@ elif st.session_state.page == "chat_page":
         prompt += f"Now Junior Doctor said something: {user_input}"
 
         return prompt
-
 
     case_study = st.session_state.selected_case_study
 
@@ -141,7 +146,8 @@ elif st.session_state.page == "chat_page":
 
             # Use the generator function with st.write_stream
             with st.chat_message("assistant", avatar="🤖"):
-                chat_responses_generator = generate_chat_responses(chat_completion)
+                chat_responses_generator = generate_chat_responses(
+                    chat_completion)
                 full_response = st.write_stream(chat_responses_generator)
         except Exception as e:
             st.error(e, icon="🚨")
@@ -160,16 +166,17 @@ elif st.session_state.page == "chat_page":
     # Button to proceed to performance evaluation below input box
     if st.button("Evaluate Performance"):
         # Count the number of assistant messages
-        assistant_messages_count = sum(1 for message in st.session_state.messages if message["role"] == "assistant")
-        
+        assistant_messages_count = sum(
+            1 for message in st.session_state.messages if message["role"] == "assistant")
+
         # Check if there are more than 1 assistant messages
-        if assistant_messages_count > 1:
+        if assistant_messages_count >= 1:
             st.session_state.page = "evaluation"
             st.rerun()
 
 elif st.session_state.page == "evaluation":
     # Page 3: Evaluation by Senior Doctor
-    
+
     def evaluate_performance():
         # Senior doctor evaluates junior doctor's performance
         prompt = f"""
@@ -191,7 +198,7 @@ elif st.session_state.page == "evaluation":
             prompt += f"{role}: {message['content']}\n"
 
         return prompt
-    
+
     # Store evaluation results
     if "evaluation" not in st.session_state:
         st.session_state.evaluation = {
@@ -202,11 +209,11 @@ elif st.session_state.page == "evaluation":
         }
 
     st.title("Doctor-Patient Chat Evaluation")
-    
+
     st.subheader("Final Evaluation")
 
     evaluation_prompt = evaluate_performance()
-    
+
     # Fetch feedback and scores from the LLM
     try:
         evaluation_response = client.chat.completions.create(
@@ -217,14 +224,14 @@ elif st.session_state.page == "evaluation":
 
         # Store and display the evaluation scores and feedback
         evaluation_content = evaluation_response.choices[0].message.content
-        
+
         # Optionally, you can use regex or parsing to extract individual scores from the response
         # For simplicity, we'll store the whole response as feedback for now
         st.session_state.evaluation["feedback"] = evaluation_content
 
     except Exception as e:
         st.error(f"Error generating evaluation: {e}")
-    
+
     # Show evaluation feedback
     if st.session_state.evaluation["feedback"]:
         st.subheader("Feedback from Senior Doctor")
