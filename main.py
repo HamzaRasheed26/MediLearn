@@ -15,6 +15,9 @@ client = Groq(api_key=api_key)
 # Specializations and difficulty levels
 specializations = ["Cardiology", "Neurology", "Pediatrics"]
 difficulty_levels = ["Beginner", "Intermediate", "Expert"]
+# Default values for selected specialization and difficulty
+selected_difficulty = "Beginner"
+selected_specialization = "Cardiology"
 
 # Step 1: Page Setup
 if "page" not in st.session_state:
@@ -30,7 +33,7 @@ def next_page():
 
 # Page 1: Case Study Selection
 if st.session_state.page == "case_selection":
-    st.title("Junior Doctor Training System")
+    st.title("MediLearn")
     st.subheader("Dynamic Case Study Generator")
 
     selected_specialization = st.selectbox(
@@ -40,14 +43,14 @@ if st.session_state.page == "case_selection":
     mkd = st.markdown("---")
 
     if st.button("Generate Case Studies"):
-        prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis."
+        prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis. Each case should include detailed patient history, symptoms, and test results."
 
         try:
             # Call the Groq API to generate case studies
             case_study_response = client.chat.completions.create(
                 model="llama3-70b-8192",  # Use appropriate model
                 messages=[{"role": "system", "content": prompt}],
-                max_tokens=500,
+
             )
 
             # Extract and split the case studies
@@ -55,6 +58,11 @@ if st.session_state.page == "case_selection":
             case_studies = re.split(
                 r'\*\*Case Study \d+:\*\*', case_study_text)
             case_studies.pop(0)  # Remove the first empty entry
+            # Create a version for display in the select box (remove '**' using regex)
+
+            case_studies_display = [
+                re.sub(r'\*+', '', case).strip() for case in case_studies]
+
             case_studies = [case.strip()
                             for case in case_studies if case.strip()]
 
@@ -62,6 +70,7 @@ if st.session_state.page == "case_selection":
             st.session_state.case_studies = case_studies
             st.session_state.selected_specialization = selected_specialization
             st.session_state.selected_difficulty = selected_difficulty
+            st.session_state.case_studies_display = case_studies_display
 
         except Exception as e:
             st.error(f"Error generating case studies: {e}")
@@ -69,15 +78,24 @@ if st.session_state.page == "case_selection":
     # If case studies are generated, display the selection
     if "case_studies" in st.session_state:
         st.markdown("### Case Studies:")
+        # selected_case_study = st.selectbox(
+        #     "Select a case study:", st.session_state.case_studies)
+
+        # In your select box, use the display version without '**'
         selected_case_study = st.selectbox(
-            "Select a case study:", st.session_state.case_studies)
+            "Select a case study:", st.session_state.case_studies_display)
 
         # Save the selected case study in session_state
         st.session_state.selected_case_study = selected_case_study
 
+        # Display the original selected case study with '**'
+        original_index = st.session_state.case_studies_display.index(
+            selected_case_study)
+
         # Display the selected case study using markdown
         st.markdown("### Selected Case Study:")
-        st.markdown(st.session_state.selected_case_study)
+        # st.markdown(st.session_state.selected_case_study)
+        st.markdown(st.session_state.case_studies[original_index])
 
         # Button to proceed to chat
         if st.button("Proceed to Chat"):
