@@ -1,13 +1,14 @@
 import os
+import toml
 from groq import Groq
 import re
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from secrets.toml
+with open("secrets.toml", "r") as secrets_file:
+    secrets = toml.load(secrets_file)
 
-# Initialize the Groq client with your API key from the .env file
-api_key = os.getenv("GROQ_API_KEY")
+# Initialize the Groq client with your API key from the TOML file
+api_key = secrets["GROQ"]["api_key"]
 client = Groq(api_key=api_key)
 
 model_name = "llama3-70b-8192"

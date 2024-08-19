@@ -4,3 +4,4 @@ test.py
 test1.py
 __pycache__
 t2.py
+secrets.toml
