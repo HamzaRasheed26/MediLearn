@@ -1,4 +1,5 @@
 import streamlit as st
+import re
 from utils import generate_case_studies
 
 def case_study_page():
@@ -22,7 +23,7 @@ def case_study_page():
             case_studies = generate_case_studies(prompt)
 
             # Prepare case studies for display (cleaning up ** formatting, etc.)
-            case_studies_display = [case.strip() for case in case_studies if case.strip()]
+            case_studies_display = [ re.sub(r'\*+', '', case).strip() for case in case_studies]
 
             # Store case studies in session_state
             st.session_state.case_studies = case_studies

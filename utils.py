@@ -19,7 +19,6 @@ def generate_case_studies(user_prompt):
     case_study_text = response.choices[0].message.content
     case_studies = re.split(r'\*\*Case Study \d+:\*\*', case_study_text)
     case_studies.pop(0)
-    case_studies_display = [ re.sub(r'\*+', '', case).strip() for case in case_studies]
     case_studies = [case.strip() for case in case_studies if case.strip()]
     return case_studies
 
