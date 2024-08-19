@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import requests
 from urllib.parse import quote_plus
 from xml.etree import ElementTree as ET
+from pubmed_requests import PubMedClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,9 +23,40 @@ difficulty_levels = ["Beginner", "Intermediate", "Expert"]
 selected_difficulty = "Beginner"
 selected_specialization = "Cardiology"
 
+
 # Step 1: Page Setup
 if "page" not in st.session_state:
     st.session_state.page = "case_selection"
+
+
+@st.dialog("Search PubMed", width="large")
+def open_dialog():
+    st.write(
+        f"Enter your query to search PubMed for related articles.")
+    query = st.text_input("Search Query")
+    if st.button("Submit"):
+        st.session_state.query = query
+        st.session_state.articles_table = search_pubmed(query)
+
+    # Display the table within the dialog if results are available
+    if "articles_table" in st.session_state and st.session_state.articles_table:
+        with st.container():
+            with st.expander("Search Results (Click to Expand)", expanded=True):
+                st.table(st.session_state.articles_table)
+
+
+def search_pubmed(query):
+    client = PubMedClient()
+    article_ids = client.fetch_articles(query)
+    if article_ids:
+        article_urls = client.generate_pubmed_urls(article_ids)
+        article_details = client.fetch_article_details(article_ids)
+
+        # Prepare data for the table
+        table_data = []
+        for url, article in zip(article_urls, article_details):
+            table_data.append({"Title": article['title'], "Link": url})
+        return table_data
 
 # Function to switch to the chat page
 
@@ -45,41 +77,44 @@ if st.session_state.page == "case_selection":
         "Select Difficulty Level:", difficulty_levels)
     mkd = st.markdown("---")
 
-    if st.button("Generate Case Studies"):
-        prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis. Each case should include detailed patient history, symptoms, and test results."
+    col1, col2 = st.columns(2)
 
-        try:
-            # Call the Groq API to generate case studies
-            case_study_response = client.chat.completions.create(
-                model="llama3-70b-8192",  # Use appropriate model
-                messages=[{"role": "system", "content": prompt}],
+    with col1:
+        if st.button("Generate Case Studies", use_container_width=True):
+            prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis. Each case should include detailed patient history, symptoms, and test results."
 
-            )
+            try:
+               # Call the Groq API to generate case studies
+                case_study_response = client.chat.completions.create(
+                    model="llama3-70b-8192",  # Use appropriate model
+                    messages=[{"role": "system", "content": prompt}],
 
-            # Extract and split the case studies
-            case_study_text = case_study_response.choices[0].message.content
-            case_studies = re.split(
-                r'\*\*Case Study \d+:\*\*', case_study_text)
-            case_studies.pop(0)  # Remove the first empty entry
-            # Create a version for display in the select box (remove '**' using regex)
+                )
 
-            case_studies_display = [
-                re.sub(r'\*+', '', case).strip() for case in case_studies]
+                # Extract and split the case studies
+                case_study_text = case_study_response.choices[0].message.content
+                case_studies = re.split(
+                    r'\*\*Case Study \d+:\*\*', case_study_text)
+                case_studies.pop(0)  # Remove the first empty entry
+                # Create a version for display in the select box (remove '**' using regex)
 
-            case_studies = [case.strip()
-                            for case in case_studies if case.strip()]
+                case_studies_display = [
+                    re.sub(r'\*+', '', case).strip() for case in case_studies]
 
-            # Store case studies in session_state
-            st.session_state.case_studies = case_studies
-            st.session_state.selected_specialization = selected_specialization
-            st.session_state.selected_difficulty = selected_difficulty
-            st.session_state.case_studies_display = case_studies_display
+                case_studies = [case.strip()
+                                for case in case_studies if case.strip()]
 
-        except Exception as e:
-            st.error(f"Error generating case studies: {e}")
+                # Store case studies in session_state
+                st.session_state.case_studies = case_studies
+                st.session_state.selected_specialization = selected_specialization
+                st.session_state.selected_difficulty = selected_difficulty
+                st.session_state.case_studies_display = case_studies_display
 
-    if st.button("Search PubMed"):
-        st.session_state.show_dialog = True
+            except Exception as e:
+                st.error(f"Error generating case studies: {e}")
+    with col2:
+        if st.button("Search PubMed", use_container_width=True):
+            open_dialog()
 
     # If case studies are generated, display the selection
     if "case_studies" in st.session_state:
@@ -187,16 +222,25 @@ elif st.session_state.page == "chat_page":
             st.session_state.messages.append(
                 {"role": "assistant", "content": combined_response}
             )
-    # Button to proceed to performance evaluation below input box
-    if st.button("Evaluate Performance"):
-        # Count the number of assistant messages
-        assistant_messages_count = sum(
-            1 for message in st.session_state.messages if message["role"] == "assistant")
 
-        # Check if there are more than 1 assistant messages
-        if assistant_messages_count >= 1:
-            st.session_state.page = "evaluation"
-            st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        # Button to proceed to performance evaluation below input box
+        if st.button("Evaluate Performance", use_container_width=True):
+            # Count the number of assistant messages
+            assistant_messages_count = sum(
+                1 for message in st.session_state.messages if message["role"] == "assistant")
+
+            # Check if there are more than 1 assistant messages
+            if assistant_messages_count >= 1:
+                st.session_state.page = "evaluation"
+                st.rerun()
+
+    with col2:
+        if st.button("Search PubMed", use_container_width=True):
+
+            open_dialog()
+
 
 elif st.session_state.page == "evaluation":
     # Page 3: Evaluation by Senior Doctor
