@@ -3,5 +3,5 @@ funcs.txt
 test.py
 test1.py
 __pycache__
-t2.py
+.streamlit
 secrets.toml
