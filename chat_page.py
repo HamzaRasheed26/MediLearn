@@ -25,10 +25,13 @@ def get_dynamic_prompt(case_study, user_input):
 
 def chat_page():
     st.title("Senior-Junior Doctor - Chat on Case Study")
+    st.markdown("---")
+    
     st.subheader("Selected Case Study")
 
     # Display the selected case study
     st.markdown(f"**Case Study:**\n{st.session_state.selected_case_study}")
+    st.markdown("---")
 
     # Initialize chat history and selected model
     if "messages" not in st.session_state:

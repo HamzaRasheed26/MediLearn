@@ -48,18 +48,18 @@ def case_study_page():
         # Select a case study from the display list
         selected_case_study = st.selectbox("Select a case study:", st.session_state.case_studies_display)
 
-        # Save the selected case study in session_state
-        st.session_state.selected_case_study = selected_case_study
-
         # Get the original index of the selected case study
-        original_index = st.session_state.case_studies_display.index(selected_case_study)
+        if  selected_case_study is not None:
+            original_index = st.session_state.case_studies_display.index(selected_case_study)
+            # Save the selected case study in session_state
+            st.session_state.selected_case_study = st.session_state.case_studies[original_index]
 
-        # Display the selected case study using markdown
-        st.markdown("### Selected Case Study:")
-        st.markdown(st.session_state.case_studies[original_index])
+            # Display the selected case study using markdown
+            st.markdown("### Selected Case Study:")
+            st.markdown(st.session_state.selected_case_study)
 
-        st.markdown("---")
-        # Button to proceed to the chat page
-        if st.button("Proceed to Chat"):
-            st.session_state.page = "chat_page"
-            st.rerun()
+            st.markdown("---")
+            # Button to proceed to the chat page
+            if st.button("Proceed to Chat"):
+                st.session_state.page = "chat_page"
+                st.rerun()

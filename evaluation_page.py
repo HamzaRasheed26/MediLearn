@@ -104,6 +104,7 @@ def evaluation_page():
 
     if st.session_state.evaluation["feedback"]:
         st.subheader("Feedback from Senior Doctor")
+        st.markdown("---")
         st.markdown(st.session_state.evaluation["feedback"])
 
         # Extract categories, scores, and comments
@@ -141,13 +142,5 @@ def evaluation_page():
     if st.button("Start New Session"):
         st.session_state.page = "case_selection"
         st.session_state.messages = []
-        st.session_state.evaluation = None
         st.session_state.selected_case_study = None
         st.rerun()
-
-# Main function to run the app
-def main():
-    evaluation_page()
-
-if __name__ == "__main__":
-    main()
