@@ -3,17 +3,46 @@ import re
 from utils import generate_case_studies
 from pubmed_modal import open_dialog
 
+
 def case_study_page():
     # Specializations and difficulty levels
-    specializations = ["Cardiology", "Neurology", "Pediatrics"]
+    # specializations = ["Cardiology", "Neurology", "Pediatrics"]
+    specializations = [
+        "Cardiology",
+        "Neurology",
+        "Pediatrics",
+        "Oncology",
+        "Dermatology",
+        "Endocrinology",
+        "Gastroenterology",
+        "Hematology",
+        "Infectious Disease",
+        "Nephrology",
+        "Orthopedics",
+        "Pulmonology",
+        "Rheumatology",
+        "Urology",
+        "Emergency Medicine",
+        "Geriatrics",
+        "Ophthalmology",
+        "Psychiatry",
+        "Radiology",
+        "Obstetrics and Gynecology",
+        "Anesthesiology",
+        "Otolaryngology (ENT)",
+        "Allergy and Immunology"
+    ]
+
     difficulty_levels = ["Beginner", "Intermediate", "Expert"]
 
     st.title("MediLearn 🩺")
     st.subheader("Dynamic Case Study Generator")
 
     # Selection boxes for specialization and difficulty
-    selected_specialization = st.selectbox("Select your specialization:", specializations)
-    selected_difficulty = st.selectbox("Select Difficulty Level:", difficulty_levels)
+    selected_specialization = st.selectbox(
+        "Select your specialization:", specializations)
+    selected_difficulty = st.selectbox(
+        "Select Difficulty Level:", difficulty_levels)
     st.markdown("---")
 
     col1, col2 = st.columns(2)
@@ -27,7 +56,8 @@ def case_study_page():
                 case_studies = generate_case_studies(prompt)
 
                 # Prepare case studies for display (cleaning up ** formatting, etc.)
-                case_studies_display = [ re.sub(r'\*+', '', case).strip() for case in case_studies]
+                case_studies_display = [
+                    re.sub(r'\*+', '', case).strip() for case in case_studies]
 
                 # Store case studies in session_state
                 st.session_state.case_studies = case_studies
@@ -46,11 +76,13 @@ def case_study_page():
         st.markdown("### Case Studies:")
 
         # Select a case study from the display list
-        selected_case_study = st.selectbox("Select a case study:", st.session_state.case_studies_display)
+        selected_case_study = st.selectbox(
+            "Select a case study:", st.session_state.case_studies_display)
 
         # Get the original index of the selected case study
-        if  selected_case_study is not None:
-            original_index = st.session_state.case_studies_display.index(selected_case_study)
+        if selected_case_study is not None:
+            original_index = st.session_state.case_studies_display.index(
+                selected_case_study)
             # Save the selected case study in session_state
             st.session_state.selected_case_study = st.session_state.case_studies[original_index]
 
