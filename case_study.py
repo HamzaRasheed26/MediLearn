@@ -1,13 +1,14 @@
 import streamlit as st
 import re
 from utils import generate_case_studies
+from pubmed_modal import open_dialog
 
 def case_study_page():
     # Specializations and difficulty levels
     specializations = ["Cardiology", "Neurology", "Pediatrics"]
     difficulty_levels = ["Beginner", "Intermediate", "Expert"]
 
-    st.title("MediLearn")
+    st.title("MediLearn 🩺")
     st.subheader("Dynamic Case Study Generator")
 
     # Selection boxes for specialization and difficulty
@@ -15,24 +16,30 @@ def case_study_page():
     selected_difficulty = st.selectbox("Select Difficulty Level:", difficulty_levels)
     st.markdown("---")
 
-    if st.button("Generate Case Studies"):
-        prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis. Each case should include detailed patient history, symptoms, and test results."
+    col1, col2 = st.columns(2)
 
-        try:
-            # Generate case studies using the utility function
-            case_studies = generate_case_studies(prompt)
+    with col1:
+        if st.button("Generate Case Studies", use_container_width=True):
+            prompt = f"Generate 3 case studies for a {selected_difficulty} level doctor specializing in {selected_specialization} without providing diagnosis. Each case should include detailed patient history, symptoms, and test results."
 
-            # Prepare case studies for display (cleaning up ** formatting, etc.)
-            case_studies_display = [ re.sub(r'\*+', '', case).strip() for case in case_studies]
+            try:
+                # Generate case studies using the utility function
+                case_studies = generate_case_studies(prompt)
 
-            # Store case studies in session_state
-            st.session_state.case_studies = case_studies
-            st.session_state.case_studies_display = case_studies_display
-            st.session_state.selected_specialization = selected_specialization
-            st.session_state.selected_difficulty = selected_difficulty
+                # Prepare case studies for display (cleaning up ** formatting, etc.)
+                case_studies_display = [ re.sub(r'\*+', '', case).strip() for case in case_studies]
 
-        except Exception as e:
-            st.error(f"Error generating case studies: {e}")
+                # Store case studies in session_state
+                st.session_state.case_studies = case_studies
+                st.session_state.case_studies_display = case_studies_display
+                st.session_state.selected_specialization = selected_specialization
+                st.session_state.selected_difficulty = selected_difficulty
+
+            except Exception as e:
+                st.error(f"Error generating case studies: {e}")
+    with col2:
+        if st.button("Search PubMed", use_container_width=True):
+            open_dialog()
 
     # If case studies are generated, display the selection
     if "case_studies" in st.session_state:
@@ -51,6 +58,7 @@ def case_study_page():
         st.markdown("### Selected Case Study:")
         st.markdown(st.session_state.case_studies[original_index])
 
+        st.markdown("---")
         # Button to proceed to the chat page
         if st.button("Proceed to Chat"):
             st.session_state.page = "chat_page"

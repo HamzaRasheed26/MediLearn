@@ -1,6 +1,7 @@
 import streamlit as st
 from typing import Generator
 from utils import get_chat_response
+from pubmed_modal import open_dialog
 
 def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
     """Yield chat response content from the Groq API response."""
@@ -74,13 +75,20 @@ def chat_page():
             st.session_state.messages.append(
                 {"role": "assistant", "content": combined_response}
             )
-    # Button to proceed to performance evaluation below input box
-    if st.button("Evaluate Performance"):
-        # Count the number of assistant messages
-        assistant_messages_count = sum(
-            1 for message in st.session_state.messages if message["role"] == "assistant")
 
-        # Check if there are more than 1 assistant messages
-        if assistant_messages_count >= 1:
-            st.session_state.page = "evaluation"
-            st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        # Button to proceed to performance evaluation below input box
+        if st.button("Evaluate Performance", use_container_width=True):
+            # Count the number of assistant messages
+            assistant_messages_count = sum(
+                1 for message in st.session_state.messages if message["role"] == "assistant")
+
+            # Check if there are any assistant messages
+            if assistant_messages_count >= 1:
+                st.session_state.page = "evaluation"
+                st.rerun()
+
+    with col2:
+        if st.button("Search PubMed", use_container_width=True):
+            open_dialog()
