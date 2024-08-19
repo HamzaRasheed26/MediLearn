@@ -10,10 +10,14 @@ load_dotenv()
 api_key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
+model_name = "llama3-70b-8192"
+chat_response_token = 600
+evaluation_token = 800
+
 def generate_case_studies(user_prompt):
     prompt = user_prompt
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model=model_name,
         messages=[{"role": "system", "content": prompt}]
         )
     case_study_text = response.choices[0].message.content
@@ -24,21 +28,21 @@ def generate_case_studies(user_prompt):
 
 def get_chat_response( system_prompt, dynamic_prompt):
     chat_completion = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model=model_name,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": dynamic_prompt}
         ],
-        max_tokens=600,
+        max_tokens=chat_response_token,
         stream=True,
     )
     return chat_completion
 
 def evaluate_performance(evaluation_prompt):
     evaluation_response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model=model_name,
         messages=[{"role": "system", "content": evaluation_prompt}],
-        max_tokens=800
+        max_tokens=evaluation_token
     )
 
     return evaluation_response.choices[0].message.content
