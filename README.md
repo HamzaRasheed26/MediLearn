@@ -51,9 +51,10 @@ The MediLearn is an interactive application designed to generate dynamic case st
    ```
 
 5. **Setup Environment Variables**:
-   Create a `.env` file in the root directory of the project and add your Groq API key:
+   Create a folder `.streamlit` and create a file `secrets.toml` in it and add your Groq API key:
    ```dotenv
-   GROQ_API_KEY=<your-groq-api-key>
+   [GROQ]
+   api_key = "your-groq-api-key"
    ```
 
 ## Usage
@@ -82,11 +83,11 @@ The `requirements.txt` file includes the following dependencies:
 - `streamlit`
 - `groq`
 - `python-dotenv`
-- `re`
-- `os`
+- `toml`
+- `plotly`
 
 ## Troubleshooting
 
-- **API Key Issues**: Ensure that the API key is correctly set in the `.env` file.
+- **API Key Issues**: Ensure that the API key is correctly set in the `.streamlit/secrets.toml` file.
 - **Dependencies**: Verify that all required packages are installed. Use `pip install -r requirements.txt` to install them.
 - **Network Issues**: Check your internet connection if there are issues connecting to the Groq API.
